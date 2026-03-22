@@ -230,7 +230,7 @@ public class SPBRevampedClient implements ClientModInitializer {
                     }
                 }
 
-                if (clientWorld.getRegistryKey() == BackroomsLevels.INFINITE_FIELD_WORLD_KEY) {
+                if (clientWorld.getRegistryKey() == BackroomsLevels.INFINITE_FIELD_WORLD_KEY || clientWorld.getRegistryKey() == BackroomsLevels.LEVEL324_WORLD_KEY) {
                     if (stage == Stage.AFTER_SOLID_BLOCKS) {
                         if (this.grassRenderer == null) {
                             this.grassRenderer = new GrassRenderer();
@@ -242,7 +242,6 @@ public class SPBRevampedClient implements ClientModInitializer {
 
                         this.grassRenderer.render();
 
-
                         if (ConfigStuff.birdQuality != BirdQuality.DISABLED) {
                             ShaderProgram shader = VeilRenderSystem.renderer().getShaderManager().getShader(BirdRenderer.computeShaderPath);
                             if (shader != null) {
@@ -252,14 +251,6 @@ public class SPBRevampedClient implements ClientModInitializer {
                                 this.birdRenderer.render();
                             }
                         }
-                    }
-                } else if (clientWorld.getRegistryKey() == BackroomsLevels.LEVEL324_WORLD_KEY) {
-                    if (stage == Stage.AFTER_SOLID_BLOCKS) {
-                        if (this.grassRenderer == null) {
-                            this.grassRenderer = new GrassRenderer();
-                        }
-
-                        this.grassRenderer.render();
                     }
                 } else if(this.grassRenderer != null) {
                     this.grassRenderer.close();
@@ -564,7 +555,7 @@ public class SPBRevampedClient implements ClientModInitializer {
                     }
 
                     getCurrentBackroomsLevel().ifPresent((backroomsLevel -> {
-                        if ((backroomsLevel instanceof InfiniteGrassBackroomsLevel/* || backroomsLevel instanceof Level324Backroomslevel*/) && ConfigStuff.birdQuality != BirdQuality.DISABLED) {
+                        if ((backroomsLevel instanceof InfiniteGrassBackroomsLevel || backroomsLevel instanceof Level324Backroomslevel) && ConfigStuff.birdQuality != BirdQuality.DISABLED) {
                             FlockManager.tick();
                         }
                     }));
