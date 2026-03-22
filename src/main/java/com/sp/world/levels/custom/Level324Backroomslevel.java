@@ -50,7 +50,7 @@ public class Level324Backroomslevel extends BackroomsLevel implements BackroomsL
 
     @Override
     public void transitionIn(CrossDimensionTeleport crossDimensionTeleport) {
-
+        crossDimensionTeleport.playerComponent().player.fallDistance = 0;
     }
 
     public void setLightState(Level0BackroomsLevel.LightState lightState) {
