@@ -109,7 +109,7 @@ public class WalkerEntity extends Entity implements GeoEntity, GeoAnimatable, IK
         this.tickComponentsServer(this);
 
         PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 100);
-        if (nearestPlayer != null && nearestPlayer.getMainHandStack().isOf(Items.BONE)) {
+        if (nearestPlayer != null && !nearestPlayer.isCreative() && !nearestPlayer.isSpectator()) {
             this.setTarget(nearestPlayer);
         } else {
             this.setTarget(null);
@@ -153,6 +153,10 @@ public class WalkerEntity extends Entity implements GeoEntity, GeoAnimatable, IK
             this.setRoll((float) MathHelper.wrapDegrees(roll));
 
             updateUpDirection();
+
+            if (this.age % 20 == 0 && this.getTarget() instanceof PlayerEntity player && this.distanceTo(player) < 3.5f) {
+                player.damage(this.getDamageSources().generic(), 4.0f);
+            }
         }
     }
 

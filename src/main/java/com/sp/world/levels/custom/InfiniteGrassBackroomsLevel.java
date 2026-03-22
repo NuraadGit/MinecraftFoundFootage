@@ -1,10 +1,7 @@
 package com.sp.world.levels.custom;
 
-import com.sp.SPBRevamped;
-import com.sp.SPBRevampedClient;
 import com.sp.cca_stuff.PlayerComponent;
 import com.sp.init.BackroomsLevels;
-import com.sp.init.ModBlocks;
 import com.sp.world.events.infinite_grass.InfiniteGrassAmbience;
 import com.sp.world.generation.chunk_generator.InfGrassChunkGenerator;
 import com.sp.world.levels.BackroomsLevel;
@@ -16,7 +13,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
@@ -38,65 +34,12 @@ public class InfiniteGrassBackroomsLevel extends BackroomsLevel {
         this.registerTransition((world, playerComponent, from) -> {
             List<LevelTransition> playerList = new ArrayList<>();
 
-            if (!(from instanceof InfiniteGrassBackroomsLevel) || !playerComponent.player.isOnGround() || playerComponent.player.getPos().y <= 57.5) {
-                return playerList;
-            }
-
-            if (hasExitPortalBlockBeneath(playerComponent)) {
-                playerList.add(getLevel324Transition(playerComponent));
-            } else {
+            if (from instanceof InfiniteGrassBackroomsLevel && playerComponent.player.getPos().y > 57.5 && playerComponent.player.isOnGround()) {
                 playerList.add(getOverworldTransition(playerComponent));
             }
 
             return playerList;
-        }, this.getLevelId() + "->exit");
-    }
-
-    private static boolean hasExitPortalBlockBeneath(PlayerComponent playerComponent) {
-        BlockPos blockPos = playerComponent.player.supportingBlockPos.orElseGet(() ->
-                playerComponent.player.getBlockPos().subtract(new Vec3i(0, 1, 0)));
-
-        return playerComponent.player.getWorld().getBlockState(blockPos).isOf(ModBlocks.VOID_BLOCK)
-                || playerComponent.player.getWorld().getBlockState(playerComponent.player.getBlockPos()).isOf(ModBlocks.VOID_BLOCK);
-    }
-
-    private LevelTransition getLevel324Transition(PlayerComponent playerComponent) {
-        return new LevelTransition(
-                40,
-                (teleport, tick) -> {
-                    World world = teleport.playerComponent().player.getWorld();
-
-                    if (world.isClient()) {
-                        if (tick == 14) {
-                            SPBRevampedClient.getCutsceneManager().blackScreen.showBlackScreen(20, true, false);
-                        }
-                        return;
-                    }
-
-                    if (tick == 20) {
-                        teleport.playerComponent().setShouldNoClip(true);
-                        teleport.playerComponent().sync();
-                    }
-
-                    if (tick == 14) {
-                        SPBRevamped.sendBlackScreenPacket((ServerPlayerEntity) teleport.playerComponent().player, 20, true, false);
-                    }
-
-                    if (tick == 1) {
-                        teleport.playerComponent().setShouldNoClip(false);
-                        teleport.playerComponent().sync();
-                    }
-                },
-                new CrossDimensionTeleport(
-                        playerComponent,
-                        BackroomsLevels.LEVEL324_BACKROOMS_LEVEL.getSpawnPos(),
-                        this,
-                        BackroomsLevels.LEVEL324_BACKROOMS_LEVEL
-                ),
-                (teleport, tick) -> {
-                    teleport.playerComponent().setShouldNoClip(false);
-                    teleport.playerComponent().sync();
-                });
+        }, this.getLevelId() + "->" + BackroomsLevels.OVERWORLD_REPRESENTING_BACKROOMS_LEVEL.getLevelId());
     }
 
     private LevelTransition getOverworldTransition(PlayerComponent playerComponent) {

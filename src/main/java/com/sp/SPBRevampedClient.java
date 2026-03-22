@@ -230,7 +230,7 @@ public class SPBRevampedClient implements ClientModInitializer {
                     }
                 }
 
-                if (clientWorld.getRegistryKey() == BackroomsLevels.INFINITE_FIELD_WORLD_KEY || clientWorld.getRegistryKey() == BackroomsLevels.LEVEL324_WORLD_KEY) {
+                if (clientWorld.getRegistryKey() == BackroomsLevels.INFINITE_FIELD_WORLD_KEY) {
                     if (stage == Stage.AFTER_SOLID_BLOCKS) {
                         if (this.grassRenderer == null) {
                             this.grassRenderer = new GrassRenderer();
@@ -250,6 +250,33 @@ public class SPBRevampedClient implements ClientModInitializer {
                                 shader.setInt("FlockAmount", ConfigStuff.birdQuality.getFlockCount());
                                 this.birdRenderer.render();
                             }
+                        }
+                    }
+                } else if (clientWorld.getRegistryKey() == BackroomsLevels.LEVEL324_WORLD_KEY) {
+                    if (stage == Stage.AFTER_SOLID_BLOCKS) {
+                        if (this.grassRenderer == null) {
+                            this.grassRenderer = new GrassRenderer();
+                        }
+
+                        this.grassRenderer.render();
+
+                        if (client.player != null && client.player.getY() > 20) {
+                            if (this.birdRenderer == null) {
+                                this.birdRenderer = new BirdRenderer();
+                            }
+
+                            if (ConfigStuff.birdQuality != BirdQuality.DISABLED) {
+                                ShaderProgram shader = VeilRenderSystem.renderer().getShaderManager().getShader(BirdRenderer.computeShaderPath);
+                                if (shader != null) {
+                                    List<Vector3f> vector3fcs = FlockManager.getFlockCenters().stream().map((vec3d -> new Vector3f((float) vec3d.x, (float) vec3d.y, (float) vec3d.z))).toList();
+                                    shader.setVectors("FlockCenters", vector3fcs.toArray(new Vector3fc[0]));
+                                    shader.setInt("FlockAmount", ConfigStuff.birdQuality.getFlockCount());
+                                    this.birdRenderer.render();
+                                }
+                            }
+                        } else if (this.birdRenderer != null) {
+                            this.birdRenderer.close();
+                            this.birdRenderer = null;
                         }
                     }
                 } else if(this.grassRenderer != null) {
@@ -555,7 +582,9 @@ public class SPBRevampedClient implements ClientModInitializer {
                     }
 
                     getCurrentBackroomsLevel().ifPresent((backroomsLevel -> {
-                        if ((backroomsLevel instanceof InfiniteGrassBackroomsLevel || backroomsLevel instanceof Level324Backroomslevel) && ConfigStuff.birdQuality != BirdQuality.DISABLED) {
+                        if ((backroomsLevel instanceof InfiniteGrassBackroomsLevel
+                                || backroomsLevel instanceof Level324Backroomslevel && client.player != null && client.player.getY() > 20)
+                                && ConfigStuff.birdQuality != BirdQuality.DISABLED) {
                             FlockManager.tick();
                         }
                     }));
