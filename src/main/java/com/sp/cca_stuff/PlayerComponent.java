@@ -520,25 +520,25 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
 
     private void summonWalker() {
         if (this.walkerSpawnDelay < 0) {
-            List<WalkerEntity> walkerEntities = this.player.getWorld().getEntitiesByClass(WalkerEntity.class, this.player.getBoundingBox().expand(48), entity -> true);
+            List<WalkerEntity> walkerEntities = this.player.getWorld().getEntitiesByClass(WalkerEntity.class, this.player.getBoundingBox().expand(128), entity -> true);
             if (!walkerEntities.isEmpty()) {
-                this.walkerSpawnDelay = 120;
+                this.walkerSpawnDelay = 200;
                 return;
             }
 
             WalkerEntity walker = ModEntities.WALKER_ENTITY.create(this.player.getWorld());
             if (walker == null) {
-                this.walkerSpawnDelay = 120;
+                this.walkerSpawnDelay = 200;
                 return;
             }
 
             BlockPos.Mutable mutable = new BlockPos.Mutable();
             float randomAngle = random.nextFloat() * 360.0f;
-            Vec3d spawnPos = new Vec3d(0, 0, 12).rotateY(randomAngle).add(player.getPos());
+            Vec3d spawnPos = new Vec3d(0, 0, 20).rotateY(randomAngle).add(player.getPos());
             if (!this.player.getWorld().getBlockState(mutable.set(spawnPos.x, spawnPos.y, spawnPos.z)).blocksMovement()) {
                 walker.refreshPositionAndAngles(Math.floor(spawnPos.x) + 0.5f, spawnPos.y, Math.floor(spawnPos.z) + 0.5f, random.nextFloat() * 360.0f, 0.0f);
                 this.player.getWorld().spawnEntity(walker);
-                this.walkerSpawnDelay = 240;
+                this.walkerSpawnDelay = 400;
                 return;
             }
         }
