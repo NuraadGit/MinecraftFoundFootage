@@ -3,6 +3,7 @@ package com.sp.cca_stuff;
 import com.sp.SPBRevamped;
 import com.sp.clientWrapper.ClientWrapper;
 import com.sp.entity.custom.SmilerEntity;
+import com.sp.entity.custom.WalkerEntity;
 import com.sp.init.*;
 import com.sp.mixininterfaces.ServerPlayNetworkSprint;
 import com.sp.sounds.voicechat.BackroomsVoicechatPlugin;
@@ -54,6 +55,9 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
     private final Random random = new Random();
 
     private int smilerSpawnDelay = 80;
+    private int walkerSpawnDelay = 200;
+
+    private boolean walkerCaught;
 
     private int stamina;
     private boolean tired;
@@ -144,6 +148,7 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
         this.glitchTick = 0;
 
         this.teleportingTimer = -1;
+        this.walkerCaught = false;
     }
 
     public void savePlayerInventory() {
@@ -343,6 +348,14 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
         this.shouldInflictGlitchDamage = shouldInflictGlitchDamage;
     }
 
+    public boolean wasCaughtByWalker() {
+        return this.walkerCaught;
+    }
+
+    public void setWalkerCaught(boolean walkerCaught) {
+        this.walkerCaught = walkerCaught;
+    }
+
     @Override
     public void readFromNbt(NbtCompound tag) {
         this.stamina = tag.getInt("stamina");
@@ -359,6 +372,7 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
         this.shouldGlitch = tag.getBoolean("shouldGlitch");
         this.shouldInflictGlitchDamage = tag.getBoolean("shouldInflictGlitchDamage");
         this.teleportingTimer = tag.getInt("teleportingTimer");
+        this.walkerCaught = tag.getBoolean("walkerCaught");
 
         this.playerSavedMainInventory.readNbtList(tag.getList("inventory", NbtElement.COMPOUND_TYPE));
         this.playerSavedOffhandInventory.readNbtList(tag.getList("inventoryOffHand", NbtElement.COMPOUND_TYPE));
@@ -381,6 +395,7 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
         tag.putBoolean("shouldGlitch", this.shouldGlitch);
         tag.putBoolean("shouldInflictGlitchDamage", this.shouldInflictGlitchDamage);
         tag.putInt("teleportingTimer", this.teleportingTimer);
+        tag.putBoolean("walkerCaught", this.walkerCaught);
 
         if (BackroomsLevels.isInBackrooms(this.player.getWorld().getRegistryKey())) {
             tag.put("inventory", this.playerSavedMainInventory.toNbtList());
@@ -485,6 +500,10 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
             summonSmilers();
         }
 
+        if (BackroomsLevels.isInBackroomsLevel(player.getWorld(), BackroomsLevels.LEVEL324_BACKROOMS_LEVEL) && player.getY() < 20) {
+            summonWalker();
+        }
+
         //*Update Entity Visibility
         updateEntityVisibility();
 
@@ -510,6 +529,61 @@ public class PlayerComponent implements AutoSyncedComponent, ClientTickingCompon
         }
 
         smilerSpawnDelay--;
+    }
+
+    public void triggerWalkerCatch() {
+        if (this.player.getWorld().isClient() || this.walkerCaught || !(this.player instanceof ServerPlayerEntity serverPlayer)) {
+            return;
+        }
+
+        this.walkerCaught = true;
+        this.setBeingCaptured(true);
+        this.setHasBeenCaptured(false);
+        this.setBeingReleased(false);
+        this.setShouldNoClip(false);
+        this.setShouldBeMuted(false);
+        this.sync();
+
+        SPBRevamped.sendBlackScreenPacket(serverPlayer, 20, false, true);
+        serverPlayer.damage(serverPlayer.getDamageSources().generic(), Float.MAX_VALUE);
+    }
+
+    public void finishWalkerCatchRespawn() {
+        this.walkerCaught = false;
+        this.setBeingCaptured(false);
+        this.setBeingReleased(false);
+        this.setHasBeenCaptured(false);
+        this.setShouldNoClip(false);
+        this.setShouldBeMuted(false);
+        this.sync();
+    }
+
+    private void summonWalker() {
+        if (this.walkerSpawnDelay < 0) {
+            List<WalkerEntity> walkerEntities = this.player.getWorld().getEntitiesByClass(WalkerEntity.class, this.player.getBoundingBox().expand(128), entity -> true);
+            if (!walkerEntities.isEmpty()) {
+                this.walkerSpawnDelay = 200;
+                return;
+            }
+
+            WalkerEntity walker = ModEntities.WALKER_ENTITY.create(this.player.getWorld());
+            if (walker == null) {
+                this.walkerSpawnDelay = 200;
+                return;
+            }
+
+            BlockPos.Mutable mutable = new BlockPos.Mutable();
+            float randomAngle = random.nextFloat() * 360.0f;
+            Vec3d spawnPos = new Vec3d(0, 0, 20).rotateY(randomAngle).add(player.getPos());
+            if (!this.player.getWorld().getBlockState(mutable.set(spawnPos.x, spawnPos.y, spawnPos.z)).blocksMovement()) {
+                walker.refreshPositionAndAngles(Math.floor(spawnPos.x) + 0.5f, spawnPos.y, Math.floor(spawnPos.z) + 0.5f, random.nextFloat() * 360.0f, 0.0f);
+                this.player.getWorld().spawnEntity(walker);
+                this.walkerSpawnDelay = 400;
+                return;
+            }
+        }
+
+        this.walkerSpawnDelay--;
     }
 
     private void updateStamina() {

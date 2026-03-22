@@ -1,6 +1,8 @@
 package com.sp.entity.custom;
 
 import com.sp.clientWrapper.ClientWrapper;
+import com.sp.cca_stuff.InitializeComponents;
+import com.sp.cca_stuff.PlayerComponent;
 import com.sp.entity.ik.components.IKAnimatable;
 import com.sp.entity.ik.components.IKLegComponent;
 import com.sp.entity.ik.components.IKModelComponent;
@@ -109,7 +111,7 @@ public class WalkerEntity extends Entity implements GeoEntity, GeoAnimatable, IK
         this.tickComponentsServer(this);
 
         PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, 100);
-        if (nearestPlayer != null && nearestPlayer.getMainHandStack().isOf(Items.BONE)) {
+        if (nearestPlayer != null && !nearestPlayer.isCreative() && !nearestPlayer.isSpectator()) {
             this.setTarget(nearestPlayer);
         } else {
             this.setTarget(null);
@@ -153,6 +155,14 @@ public class WalkerEntity extends Entity implements GeoEntity, GeoAnimatable, IK
             this.setRoll((float) MathHelper.wrapDegrees(roll));
 
             updateUpDirection();
+
+            if (this.getTarget() instanceof PlayerEntity player && this.distanceTo(player) < 2.25f) {
+                PlayerComponent playerComponent = InitializeComponents.PLAYER.get(player);
+                if (!playerComponent.wasCaughtByWalker()) {
+                    playerComponent.triggerWalkerCatch();
+                    this.discard();
+                }
+            }
         }
     }
 
