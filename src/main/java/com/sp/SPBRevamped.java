@@ -93,6 +93,13 @@ public class SPBRevamped implements ModInitializer {
 		}));
 
 		ServerPlayerEvents.AFTER_RESPAWN.register(((oldPlayer, newPlayer, alive) -> {
+			PlayerComponent oldPlayerComponent = InitializeComponents.PLAYER.get(oldPlayer);
+			if (oldPlayerComponent.wasCaughtByWalker()) {
+				oldPlayerComponent.finishWalkerCatchRespawn();
+				InitializeComponents.PLAYER.get(newPlayer).finishWalkerCatchRespawn();
+				return;
+			}
+
 			if(!BackroomsLevels.isInBackrooms(oldPlayer.getWorld().getRegistryKey())) {
 				return;
 			}

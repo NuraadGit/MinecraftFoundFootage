@@ -52,15 +52,27 @@ public abstract class PlayerEntityMixin extends Entity {
             }
         }
 
-        if (playerComponent.hasBeenCaptured() || playerComponent.isBeingCaptured() || events.activeSkinWalkerEntity.getTarget() == player) {
+        boolean skinWalkerWasTargetingPlayer = events.activeSkinWalkerEntity != null && events.activeSkinWalkerEntity.getTarget() == player;
+        if (playerComponent.wasCaughtByWalker()) {
+            if (this.getWorld() instanceof ServerWorld) {
+                ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
+                serverPlayer.setCameraEntity(serverPlayer);
+            }
+
+            return;
+        }
+
+        if (playerComponent.hasBeenCaptured() || playerComponent.isBeingCaptured() || skinWalkerWasTargetingPlayer) {
             if (this.getWorld() instanceof ServerWorld) {
                 ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
 
                 serverPlayer.setCameraEntity(serverPlayer);
             }
 
-            events.activeSkinWalkerEntity.discard();
-            events.activeSkinWalkerEntity = null;
+            if (events.activeSkinWalkerEntity != null) {
+                events.activeSkinWalkerEntity.discard();
+                events.activeSkinWalkerEntity = null;
+            }
 
             playerComponent.setBeingCaptured(false);
             playerComponent.setBeingReleased(false);
